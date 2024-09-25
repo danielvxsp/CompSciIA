@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 import librosa
 import os
+import shutil # manae directories
 
 # function to toggle between light and dark mode
 def toggle_mode():
@@ -27,12 +28,32 @@ def open_file_dialog():
         file_label.config(text=file_name)
         process_audio_file(file_path)
 
-# using try accept during audoanalizing so program dosent crash if theres a wrong input 
+# using try accept during audio analizing so program dosent crash if theres a wrong input 
 def process_audio_file(file_path):
     try:
         y, sr = librosa.load(file_path)
         tempo, beat_frames = librosa.beat.beat_track(y=y, sr=sr)
         result_label.config(text=f"Tempo: {tempo:} BPM")
+        
+        if tempo < 60:
+            folder_name = "Below_60_BPM"
+        elif 60 <= tempo < 90:
+            folder_name = "60_to_90_BPM"
+        elif 90 <= tempo < 120:
+            folder_name = "90_to_120_BPM"
+        elif 120 <= tempo < 150:
+            folder_name = "120_to_150_BPM"
+        else:
+            folder_name = "Above_150_BPM"
+
+        if not os.path.exists(folder_name):
+            os.makedirs(folder_name)
+
+        destination_path = os.path.join(folder_name, os.path.basename(file_path))
+        shutil.move(file_path, destination_path)
+
+        result_label.config(text=f"Tempo: {tempo:.2f} BPM\nMoved to folder: {folder_name}")
+        
     except Exception as e:
         messagebox.showerror("Error", f"An error occurred while processing the file:\n{e}")
 
