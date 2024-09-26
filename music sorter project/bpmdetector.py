@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import filedialog, messagebox
+from tkinter import filedialog, messagebox, PhotoImage
 import librosa
 import os
 import shutil
@@ -52,6 +52,7 @@ def apply_dark_mode(widgets):
         # Only apply 'fg' to widgets that have text
         if isinstance(widget, (tk.Label, tk.Button, tk.Entry)):
             widget.config(fg='white')
+            mode_label.config(image=dark_mode_image)
 
 def apply_light_mode(widgets):
     for widget in widgets:
@@ -59,7 +60,7 @@ def apply_light_mode(widgets):
         # Only apply 'fg' to widgets that have text
         if isinstance(widget, (tk.Label, tk.Button, tk.Entry)):
             widget.config(fg='black')
-
+            mode_label.config(image=light_mode_image)
 
 def open_file_dialog():
     global config
@@ -134,6 +135,9 @@ root.title("Audio Sorter")
 root.geometry("400x300")
 root.config(bg='white')
 
+light_mode_image = PhotoImage(file='music sorter project/light_mode.png') 
+dark_mode_image = PhotoImage(file='music sorter project/dark_mode.png')    
+
 # Main frame (the initial window)
 main_frame = tk.Frame(root, bg='white')
 main_frame.pack(fill='both', expand=True)
@@ -167,8 +171,11 @@ def browse_sorter_path():
         config['sorter_dir'] = new_sorter_path
         sorter_path_label.config(text=f"Current directory: {new_sorter_path}")
 
-browse_button = tk.Button(settings_frame, text="Browse", command=browse_sorter_path)
-browse_button.pack(pady=15)
+browse_button = tk.Button(settings_frame, text="Chose Directory", command=browse_sorter_path)
+browse_button.pack(pady=(20, 3))
+
+description = tk.Label(settings_frame, text="changes where analized audio files are stored and sorted", bg='white', fg='black')
+description.pack(pady=(0, 10))
 
 def save_settings():
     config['sorter_dir'] = sorter_path_label.cget("text").replace("Current directory: ", "")
@@ -176,16 +183,20 @@ def save_settings():
         json.dump(config, f)
     show_main()
 
-toggle_mode_button = tk.Button(settings_frame, text="Toggle Mode", command=toggle_mode)
-toggle_mode_button.pack(pady=15)
+mode_label = tk.Label(settings_frame, image=light_mode_image)
+mode_label.pack(pady=(20, 3))
+
+description_mode = tk.Label(settings_frame, text="Light / Dark", bg='white', fg='black')
+description_mode.pack(pady=(0, 10))
+
+mode_label.bind("<Button-1>", lambda e: toggle_mode())
 
 save_button = tk.Button(settings_frame, text="Back", command=save_settings)
-save_button.pack(pady=15)
-
+save_button.pack(pady=20)
 
 # Collect all widgets for universal theme toggle
 main_widgets = [file_label, result_label, open_button, quit_button, settings_button]
-settings_widgets = [sorter_path_label, browse_button, save_button, toggle_mode_button]
+settings_widgets = [sorter_path_label, browse_button, save_button, mode_label, description, description_mode]
 
 # Set mode based on config
 if mode == 'dark':
