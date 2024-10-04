@@ -2,10 +2,10 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, PhotoImage
 import librosa
 import os
-import shutil
+import shutil 
 import json
-import numpy
-from mutagen._file import File
+import numpy 
+from mutagen import File
 
 sorted_file_path = None # intitalize gmobal
 
@@ -47,7 +47,7 @@ def toggle_mode():  # Function to toggle between light and dark mode
         apply_light_mode(settings_widgets)
         apply_light_mode(metadata_widgets)
         mode = 'light'
-
+    
     config['mode'] = mode
     with open(config_file, 'w') as f:
         json.dump(config, f)
@@ -71,21 +71,21 @@ def display_metadata(file_path):
     try:
         audio = File(file_path)  # Load the audio file using mutagen
         metadata = {}
-
+        
         if audio is not None:
             metadata['Title'] = audio.get('TIT2', 'Unknown')  # Title
             metadata['Artist'] = audio.get('TPE1', 'Unknown')  # Artist
             metadata['Album'] = audio.get('TALB', 'Unknown')  # Album
             metadata['Duration'] = round(audio.info.length, 2) if audio.info else 'Unknown'  # Duration in seconds
             metadata['Sample Rate'] = audio.info.sample_rate if audio.info else 'Unknown'
-
+        
         # Display metadata in the UI
         metadata_label.config(text=f"Title: {metadata['Title']}\n"
                                    f"Artist: {metadata['Artist']}\n"
                                    f"Album: {metadata['Album']}\n"
                                    f"Duration: {metadata['Duration']} sec\n"
                                    f"Sample Rate: {metadata['Sample Rate']} Hz")
-
+            
     except Exception as e:
         print(f"Error retrieving metadata: {e}")
         metadata_label.config(text="Error reading metadata.")
@@ -98,9 +98,9 @@ def process_audio_file(file_path, duration=30, sample_rate=22050):
         tempo, beat_frames = librosa.beat.beat_track(y=y, sr=sr)
         result_label.config(text=f"Tempo: {tempo:} BPM")
         detect_key(file_path)
-
+        
     except Exception as e:
-        messagebox.showerror("Error", f"An error occurred while processing the file:\n{e}")
+        messagebox.showerror("Error", f"An error occurred while processing the file:\n{e}")     
 
 def detect_key(file_path):
     y, sr = librosa.load(file_path)
@@ -109,7 +109,7 @@ def detect_key(file_path):
     keys = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
     detected_key = keys[key]
     key_label.config(text=f"key: {keys[key]}")
-
+        
 def open_file_dialog():
     global config, sorted_file_path
     file_path = filedialog.askopenfilename(filetypes=[("Audio Files", "*.wav *.mp3")],
@@ -159,7 +159,7 @@ def show_settings():
         apply_dark_mode(settings_widgets)
     else:
         apply_light_mode(settings_widgets)
-
+        
 def show_metadata_frame():
     global sorted_file_path
     main_frame.pack_forget()  # Hide the main frame
@@ -179,6 +179,8 @@ def show_metadata_frame():
             metadata_text = "No metadata found or error loading metadata."
 
         metadata_label.config(text=metadata_text)
+        
+        # store scraped metadata in the json file to acces a history of scanned files and their results
 
 # Switch back to the main frame
 def show_main():
@@ -195,8 +197,8 @@ root.title("Audio Sorter")
 root.geometry("550x450")
 root.config(bg='white')
 
-light_mode_image = PhotoImage(file='music sorter project/light_mode.png')
-dark_mode_image = PhotoImage(file='music sorter project/dark_mode.png')
+light_mode_image = PhotoImage(file='music sorter project/light_mode.png') 
+dark_mode_image = PhotoImage(file='music sorter project/dark_mode.png')    
 
 # Main frame (the initial window)
 main_frame = tk.Frame(root, bg='white')
@@ -220,7 +222,7 @@ destination_label.pack(pady=25)
 quit_button = tk.Button(main_frame, text="Quit", command=root.quit, bg='lightgray', fg='black')
 quit_button.pack(side="bottom", pady=20)
 
-# Create a settings button
+# Create a settings buttohttps://www.washingtonpost.com/crossword-puzzles/daily/?id=tca241003&set=wapo-daily&puzzleType=crossword&playId=405b5858-2d0a-4089-aa08-cb3fe076888an
 settings_button = tk.Button(main_frame, text="Settings", command=show_settings)
 settings_button.pack(pady=(0, 10))
 
@@ -251,7 +253,7 @@ def save_settings():
     with open(config_file, 'w') as f:
         json.dump(config, f)
     show_main()
-
+    
 def back_to_main():
     # Go back to the main frame
     metadata_frame.pack_forget()  # Hide the metadata frame
