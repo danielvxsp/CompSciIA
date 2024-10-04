@@ -5,7 +5,7 @@ import os
 import shutil 
 import json
 import numpy 
-from mutagen import File
+from mutagen._file import File
 
 sorted_file_path = None # intitalize gmobal
 
