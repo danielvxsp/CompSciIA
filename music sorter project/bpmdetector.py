@@ -2,10 +2,12 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, PhotoImage
 import librosa
 import os
-import shutil 
+import shutil
 import json
-import numpy 
-from mutagen import File
+import numpy
+from mutagen._file import File
+
+sorted_file_path = None # intitalize gmobal
 
 # Load configuration file
 config_file = 'config.json'
@@ -34,16 +36,18 @@ sorter_path = sorter_dir
 def toggle_mode():  # Function to toggle between light and dark mode
     global mode
     if mode == 'light':
-        apply_dark_mode([root, main_frame, settings_frame])
+        apply_dark_mode([root, main_frame, settings_frame, metadata_frame])
         apply_dark_mode(main_widgets)
         apply_dark_mode(settings_widgets)
+        apply_dark_mode(metadata_widgets)
         mode = 'dark'
     else:
-        apply_light_mode([root, main_frame, settings_frame])
+        apply_light_mode([root, main_frame, settings_frame, metadata_frame])
         apply_light_mode(main_widgets)
         apply_light_mode(settings_widgets)
+        apply_light_mode(metadata_widgets)
         mode = 'light'
-    
+
     config['mode'] = mode
     with open(config_file, 'w') as f:
         json.dump(config, f)
@@ -67,21 +71,21 @@ def display_metadata(file_path):
     try:
         audio = File(file_path)  # Load the audio file using mutagen
         metadata = {}
-        
+
         if audio is not None:
             metadata['Title'] = audio.get('TIT2', 'Unknown')  # Title
             metadata['Artist'] = audio.get('TPE1', 'Unknown')  # Artist
             metadata['Album'] = audio.get('TALB', 'Unknown')  # Album
             metadata['Duration'] = round(audio.info.length, 2) if audio.info else 'Unknown'  # Duration in seconds
             metadata['Sample Rate'] = audio.info.sample_rate if audio.info else 'Unknown'
-        
+
         # Display metadata in the UI
         metadata_label.config(text=f"Title: {metadata['Title']}\n"
                                    f"Artist: {metadata['Artist']}\n"
                                    f"Album: {metadata['Album']}\n"
                                    f"Duration: {metadata['Duration']} sec\n"
                                    f"Sample Rate: {metadata['Sample Rate']} Hz")
-            
+
     except Exception as e:
         print(f"Error retrieving metadata: {e}")
         metadata_label.config(text="Error reading metadata.")
@@ -94,9 +98,9 @@ def process_audio_file(file_path, duration=30, sample_rate=22050):
         tempo, beat_frames = librosa.beat.beat_track(y=y, sr=sr)
         result_label.config(text=f"Tempo: {tempo:} BPM")
         detect_key(file_path)
-        
+
     except Exception as e:
-        messagebox.showerror("Error", f"An error occurred while processing the file:\n{e}")     
+        messagebox.showerror("Error", f"An error occurred while processing the file:\n{e}")
 
 def detect_key(file_path):
     y, sr = librosa.load(file_path)
@@ -105,9 +109,9 @@ def detect_key(file_path):
     keys = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
     detected_key = keys[key]
     key_label.config(text=f"key: {keys[key]}")
-        
+
 def open_file_dialog():
-    global config
+    global config, sorted_file_path
     file_path = filedialog.askopenfilename(filetypes=[("Audio Files", "*.wav *.mp3")],
                                            initialdir=config.get('last_folder', ''))
     if file_path:
@@ -155,26 +159,26 @@ def show_settings():
         apply_dark_mode(settings_widgets)
     else:
         apply_light_mode(settings_widgets)
-        
+
 def show_metadata_frame():
-    # Switch to the metadata frame
+    global sorted_file_path
     main_frame.pack_forget()  # Hide the main frame
     metadata_frame.pack(fill='both', expand=True)
 
     # Display the metadata from the selected file
-    file_path = bpm_folder_path.cget("text")  # Get the file path from the label
-    metadata = display_metadata(file_path)  # Fetch metadata
+    if sorted_file_path:
+        metadata = display_metadata(sorted_file_path)
 
-    if metadata:
-        metadata_text = (f"Title: {metadata['Title']}\n"
-                         f"Artist: {metadata['Artist']}\n"
-                         f"Album: {metadata['Album']}\n"
-                         f"Duration: {metadata['Duration']} sec\n"
-                         f"Sample Rate: {metadata['Sample Rate']} Hz")
-    else:
-        metadata_text = "No metadata found or error loading metadata."
+        if metadata:
+            metadata_text = (f"Title: {metadata['Title']}\n"
+                          f"Artist: {metadata['Artist']}\n"
+                          f"Album: {metadata['Album']}\n"
+                          f"Duration: {metadata['Duration']} sec\n"
+                          f"Sample Rate: {metadata['Sample Rate']} Hz")
+        else:
+            metadata_text = "No metadata found or error loading metadata."
 
-    metadata_label.config(text=metadata_text)
+        metadata_label.config(text=metadata_text)
 
 # Switch back to the main frame
 def show_main():
@@ -191,8 +195,8 @@ root.title("Audio Sorter")
 root.geometry("550x450")
 root.config(bg='white')
 
-light_mode_image = PhotoImage(file='music sorter project/light_mode.png') 
-dark_mode_image = PhotoImage(file='music sorter project/dark_mode.png')    
+light_mode_image = PhotoImage(file='music sorter project/light_mode.png')
+dark_mode_image = PhotoImage(file='music sorter project/dark_mode.png')
 
 # Main frame (the initial window)
 main_frame = tk.Frame(root, bg='white')
@@ -247,7 +251,7 @@ def save_settings():
     with open(config_file, 'w') as f:
         json.dump(config, f)
     show_main()
-    
+
 def back_to_main():
     # Go back to the main frame
     metadata_frame.pack_forget()  # Hide the metadata frame
@@ -276,7 +280,7 @@ back_button.pack(pady=20)
 
 
 # Collect all widgets for universal theme toggle
-main_widgets = [file_label, result_label, key_label, destination_label, open_button, quit_button, metadata_button]
+main_widgets = [file_label, result_label, key_label, destination_label, open_button, quit_button, metadata_button, settings_button]
 settings_widgets = [sorter_path_label, browse_button, save_button, mode_label, description, description_mode]
 metadata_widgets = [metadata_label, back_button]
 
