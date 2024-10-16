@@ -197,8 +197,12 @@ root.title("Audio Sorter")
 root.geometry("550x450")
 root.config(bg='white')
 
-light_mode_image = PhotoImage(file='musicsorterproject/light_mode.png') 
-dark_mode_image = PhotoImage(file='musicsorterproject/dark_mode.png')    
+# Get the directory of the current script
+base_dir = os.path.dirname(os.path.abspath(__file__))
+
+# Build the path to the image files
+light_mode_image = PhotoImage(file=os.path.join(base_dir, 'light_mode.png')) 
+dark_mode_image = PhotoImage(file=os.path.join(base_dir, 'dark_mode.png'))      
 
 # Main frame (the initial window)
 main_frame = tk.Frame(root, bg='white')
