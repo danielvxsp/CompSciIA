@@ -197,8 +197,8 @@ root.title("Audio Sorter")
 root.geometry("550x450")
 root.config(bg='white')
 
-light_mode_image = PhotoImage(file='music sorter project/light_mode.png') 
-dark_mode_image = PhotoImage(file='music sorter project/dark_mode.png')    
+light_mode_image = PhotoImage(file='musicsorterproject/light_mode.png') 
+dark_mode_image = PhotoImage(file='musicsorterproject/dark_mode.png')    
 
 # Main frame (the initial window)
 main_frame = tk.Frame(root, bg='white')
