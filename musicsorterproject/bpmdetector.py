@@ -55,7 +55,7 @@ def toggle_mode():  # Function to toggle between light and dark mode
 
 def apply_dark_mode(widgets):
     for widget in widgets:
-        widget.config(bg='#333333')
+        widget.config(bg='#373737')
         if isinstance(widget, (tk.Label, tk.Button, tk.Entry)):
             widget.config(fg='white')
             mode_label.config(image=dark_mode_image)
