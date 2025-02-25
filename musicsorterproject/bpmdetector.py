@@ -91,6 +91,11 @@ def display_metadata(file_path):
         print(f"Error retrieving metadata: {e}")
         metadata_label.config(text="Error reading metadata.")
 
+def get_tempo(file_path):
+    y, sr = librosa.load(file_path)
+    tempo, beat_frames = librosa.beat.beat_track(y=y, sr=sr)
+    return tempo
+
 # Using try-except during audio analyzing so program doesn't crash if there's a wrong input
 def process_audio_file(file_path, duration=30, sample_rate=22050):
     try:
@@ -122,7 +127,11 @@ def open_file_dialog():
             json.dump(config, f)
         file_name = file_path.split("/")[-1]  # make the filepath the title
         file_label.config(text=file_name)
-        process_audio_file(file_path)
+#        process_audio_file(file_path)
+
+        tempo = get_tempo(file_path)
+        result_label.config(text=f"Tempo: {tempo:} BPM")    
+        detect_key(file_path)
 
         if sorter_dir:
             sorter_path = sorter_dir  # Use the selected directory as the sorter path
@@ -130,9 +139,6 @@ def open_file_dialog():
                 os.makedirs(sorter_path)
 
             # Process the audio file and create the BPM range folders
-            y, sr = librosa.load(file_path)
-            tempo, beat_frames = librosa.beat.beat_track(y=y, sr=sr)
-            result_label.config(text=f"Tempo: {tempo:} BPM")
 
             if tempo < 60:
                 folder_name = "Below_60_BPM"
