@@ -7,29 +7,66 @@ import json
 import numpy 
 from mutagen._file import File
 
+class BPMFileSorter:
+    BPM_RANGES = {
+        (0, 60): "Below_60_BPM",
+        (60, 90): "60_to_90_BPM",
+        (90, 120): "90_to_120_BPM",
+        (120, 150): "120_to_150_BPM",
+        (150, 300): "Above_150_BPM"
+    }
+
+    def __init__(self, sorter_dir):
+        self.sorter_dir = sorter_dir
+
+    def get_bpm_folder(self, tempo):
+        for (low, high), folder in self.BPM_RANGES.items():
+            if low <= tempo < high:
+                return folder
+        return "Above_150_BPM"
+
+    def organize_file(self, file_path, tempo):
+        folder_name = self.get_bpm_folder(tempo)
+        dest_folder = os.path.join(self.sorter_dir, folder_name)
+        os.makedirs(dest_folder, exist_ok=True)
+        shutil.copy(file_path, dest_folder)
+
+class ConfigManager:
+    def __init__(self, config_file='config.json'):
+        self.config_file = config_file
+        self.config = self._load_config()
+    
+    def _load_config(self):
+        if os.path.exists(self.config_file):
+            with open(self.config_file, 'r') as f:
+                return json.load(f)
+        return {'last_folder': '', 'sorter_dir': '', 'mode': 'light'}
+    
+    def save_config(self):
+        with open(self.config_file, 'w') as f:
+            json.dump(self.config, f)
+    
+    def get(self, key, default=None):
+        return self.config.get(key, default)
+    
+    def set(self, key, value):
+        self.config[key] = value
 
 sorted_file_path = None # intitalize gmobal
 
 # Load configuration file
-config_file = 'config.json'
-if os.path.exists(config_file):
-    with open(config_file, 'r') as f:
-        config = json.load(f)
-else:
-    config = {'last_folder': '', 'sorter_dir': '', 'mode': 'light'}
-    with open(config_file, 'w') as f:
-        json.dump(config, f)
+config_manager = ConfigManager()
 
 # Get sorter directory and mode from configuration file
-sorter_dir = config.get('sorter_dir', '')
-mode = config.get('mode', 'light')
+sorter_dir = config_manager.get('sorter_dir', '')
+mode = config_manager.get('mode', 'light')
 
 # If sorter directory is not set, prompt user to select it
 if not sorter_dir:
     sorter_dir = filedialog.askdirectory(title="Select directory to use as sorter folder")
-    config['sorter_dir'] = sorter_dir
+    config_manager.set('sorter_dir', sorter_dir)
     with open(config_file, 'w') as f:
-        json.dump(config, f)
+        config_manager.save_config()
 
 # Use sorter directory
 sorter_path = sorter_dir
@@ -49,9 +86,8 @@ def toggle_mode():  # Function to toggle between light and dark mode
         apply_light_mode(metadata_widgets)
         mode = 'light'
     
-    config['mode'] = mode
-    with open(config_file, 'w') as f:
-        json.dump(config, f)
+    config_manager.set('mode', mode)
+    config_manager.save_config()
 
 def apply_dark_mode(widgets):
     for widget in widgets:
@@ -110,17 +146,16 @@ def detect_key(file_path):
     key_label.config(text=f"key: {keys[key]}")
         
 def open_file_dialog():
-    global config, sorted_file_path
+    global sorted_file_path
     file_path = filedialog.askopenfilename(filetypes=[("Audio Files", "*.wav *.mp3")],
-                                           initialdir=config.get('last_folder', ''))
+                                           initialdir=config_manager.get('last_folder', ''))
     if file_path:
         folder_path = os.path.dirname(file_path)
-        config['last_folder'] = folder_path
-        with open(config_file, 'w') as f:
-            json.dump(config, f)
-        file_name = file_path.split("/")[-1]  # make the filepath the title
+        config_manager.set('last_folder', folder_path)
+        config_manager.save_config()
+        
+        file_name = file_path.split("/")[-1]
         file_label.config(text=file_name)
-#        process_audio_file(file_path)
 
         tempo = get_tempo(file_path)
         result_label.config(text=f"Tempo: {tempo:} BPM")    
@@ -128,29 +163,12 @@ def open_file_dialog():
         display_metadata(file_path)
 
         if sorter_dir:
-            sorter_path = sorter_dir  # Use the selected directory as the sorter path
-            if not os.path.exists(sorter_path):
-                os.makedirs(sorter_path)
+            # Create file sorter instance and organize the file
+            file_sorter = BPMFileSorter(sorter_dir)
+            file_sorter.organize_file(file_path, tempo)
+            destination_label.config(text=f"File organized in {file_sorter.get_bpm_folder(tempo)}")
 
             # Process the audio file and create the BPM range folders
-
-            if tempo < 60:
-                folder_name = "Below_60_BPM"
-            elif 60 <= tempo < 90:
-                folder_name = "60_to_90_BPM"
-            elif 90 <= tempo < 120:
-                folder_name = "90_to_120_BPM"
-            elif 120 <= tempo < 150:
-                folder_name = "120_to_150_BPM"
-            else:
-                folder_name = "Above_150_BPM"
-
-            bpm_folder_path = os.path.join(sorter_path, folder_name)
-            if not os.path.exists(bpm_folder_path):
-                os.makedirs(bpm_folder_path)
-                destination_label.config(text=f"")
-            # Move the audio file to the BPM range folder
-            shutil.copy(file_path, bpm_folder_path) # URGENT moving dosent allow metadata to be read, find a way to move instead of copy and still scrape metadata
 
 # Switch to the settings frame
 def show_settings():
@@ -254,9 +272,9 @@ description = tk.Label(settings_frame, text="changes where analized audio files 
 description.pack(pady=(0, 10))
 
 def save_settings():
-    config['sorter_dir'] = sorter_path_label.cget("text").replace("Current directory: ", "")
-    with open(config_file, 'w') as f:
-        json.dump(config, f)
+    new_path = sorter_path_label.cget("text").replace("Current directory: ", "")
+    config_manager.set('sorter_dir', new_path)
+    config_manager.save_config()
     show_main()
     
 def back_to_main():
