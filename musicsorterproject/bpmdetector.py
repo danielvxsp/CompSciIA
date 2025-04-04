@@ -65,8 +65,7 @@ mode = config_manager.get('mode', 'light')
 if not sorter_dir:
     sorter_dir = filedialog.askdirectory(title="Select directory to use as sorter folder")
     config_manager.set('sorter_dir', sorter_dir)
-    with open(config_file, 'w') as f:
-        config_manager.save_config()
+    config_manager.save_config()
 
 # Use sorter directory
 sorter_path = sorter_dir
